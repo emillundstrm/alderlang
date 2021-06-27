@@ -157,6 +157,12 @@ The `seq` function (or `!!` operator) can be used for this.
 
 TODO: Example for when this is useful.
 
+## Examples
+
+Right now there is only:
+
+- [FizzBuzz](https://github.com/emillundstrm/alderlang/blob/main/src/test/resources/fizzbuzz.al)
+
 ## Running
 
 Right now only an interpreter exists.
