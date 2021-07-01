@@ -218,6 +218,27 @@ internal class InterpreterTest {
     }
 
     @Test
+    fun testPartition() {
+        assertEquals(
+            TypedValue(Id.named("True")),
+            Interpreter.run("""
+            import stdlib
+            let isEven x = eq 0 (x % 2)
+            let main = eq (partition isEven [1,2,3,4]) (Pair [2,4] [1,3])
+            """.trimIndent()))
+    }
+
+    @Test
+    fun testFoldr() {
+        assertEquals(
+            IntegerLiteral(10),
+            Interpreter.run("""
+            import stdlib
+            let main = foldStrict plus 0 [1,2,3,4]
+            """.trimIndent()))
+    }
+
+    @Test
     fun testFizzBuzz() {
         runFile("fizzbuzz.al")
     }

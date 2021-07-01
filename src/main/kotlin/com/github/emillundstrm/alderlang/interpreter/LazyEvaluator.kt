@@ -31,14 +31,13 @@ data class LazyEvaluator(val context: ExecutionContext) {
             }
         }
         // TODO: This used to return PatternMatchFailed, but this is incorrect since it could cause another branch to be executed in an unrelated case expr
-        throw PatternMatchFailedException("Pattern match failed (non-exhaustive case clause $e)")
+        throw PatternMatchFailedException("Pattern match failed (non-exhaustive case clause $e for value ${eval(e.test)})")
     }
 
     private fun apply(e: Apply): Expression {
-        //println("Apply $arg to $func")
+        //println("Apply ${e.arg} to ${e.func}")
         applies++
-        val f = eval(e.func)
-        val result = when (f) {
+        val result = when (val f = eval(e.func)) {
             is Function -> eval(matchAndReplace(f, e.arg))
             is NativeFunction -> f.apply(this::eval, e.arg)
             else -> throw TypeCastException("f must be a function but was $f")
@@ -49,7 +48,7 @@ data class LazyEvaluator(val context: ExecutionContext) {
 
     private fun matchAndReplace(f: Function, expr: Expression): Expression {
         return when (val pattern = f.argument) {
-            is Id -> f.body.replace(pattern, expr)
+            is Id -> f.body.replace(pattern, if (pattern.strict) eval(expr) else expr)
             is ConstructorPattern -> {
                 // TODO: Implement lazy matching for product types. The constructor check is unnecessary if there is only one constructor.
                 // TODO: How to lift out arguments though?
@@ -88,7 +87,7 @@ private fun Function.replaceWithAlphaConversion(name: Id, value: Expression): Fu
         name == argument -> this
         argument !is UniqueIdentifier && freeVars(value).contains(argument) -> {
             // Change (x -> y) to (z -> y.replace(x, y)), so variable names no longer clash.
-            val newArg = UniqueIdentifier()
+            val newArg = UniqueIdentifier(false)
             Function(newArg, body.replace(argument as Id, newArg).replace(name, value))
         }
         else -> Function(argument, body.replace(name, value))

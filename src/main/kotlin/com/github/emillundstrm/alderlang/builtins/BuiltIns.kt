@@ -41,6 +41,14 @@ fun evalStrictHelper(eval: (Expression) -> Expression, expr: Expression): Expres
 
 val evalStrict = NativeFunction { eval, expr -> evalStrictHelper(eval, expr) }
 
+var c = 0
+val tap = NativeFunction { eval, expr ->
+    val v = eval(expr)
+    c++
+    println("$c $v")
+    v
+}
+
 val seq = NativeFunction { eval, a ->
     NativeFunction { _, b ->
         eval(a)
@@ -71,6 +79,8 @@ val chars = NativeFunction { eval, expr ->
     }
 }
 
+val lessThan = NativeFunction { _, a -> NativeFunction { eval, b -> fromBoolean((eval(a) as IntegerLiteral).value < (eval(b) as IntegerLiteral).value) }}
+
 object Plus : BinaryMathFunction() {
     override fun apply(a: Int, b: Int): Int = a + b
 }
@@ -93,7 +103,10 @@ object Modulo : BinaryMathFunction() {
 
 abstract class BinaryMathFunction : NativeFunction {
     override fun apply(eval: Eval, arg: Expression): Expression {
-        return NativeFunction { _, arg2 -> IntegerLiteral(apply(toInt(eval(arg)), toInt(eval(arg2)))) }
+        return NativeFunction { _, arg2 ->
+            val x = eval(arg)
+            val y = eval(arg2)
+            IntegerLiteral(apply(toInt(x), toInt(y))) }
     }
 
     abstract fun apply(a: Int, b: Int): Int
@@ -117,9 +130,12 @@ object BuiltIns {
         Pair("chars", chars),
         Pair("string", makeString),
         Pair("strict", evalStrict),
+        Pair("tap", tap),
         Pair("seq", seq),
         Pair("eq", equals),
-        Pair("println", printLine),
+        Pair("lt", lessThan),
+        Pair("print", print),
+        Pair("readln", readLn),
         Pair("chainIO", chainIO),
         Pair("noop", noop)
     )

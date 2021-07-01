@@ -6,3 +6,4 @@ let listIO l = case l of
     | (Cons x xs) -> chainIO x (z -> listIO xs)
     | Nil -> noop
 
+let println x = seqIO (print x) (print "\n")

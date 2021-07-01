@@ -22,6 +22,7 @@ val alderLangGrammar = object : Grammar<Node>() {
     val APP_RIGHT by literalToken("|>")
     val APP_LEFT by literalToken("<|")
     val SEQ by literalToken("!!")
+    val STRICT by literalToken("!")
     val PIPE by literalToken("|")
     val LSBRACK by literalToken("[")
     val RSBRACK by literalToken("]")
@@ -47,11 +48,13 @@ val alderLangGrammar = object : Grammar<Node>() {
     val import by -K_IMPORT * VARIABLE use { Import(text) }
 
     val typeId by TYPE use { Id.named(text) }
-    val identifier by VARIABLE use { Id.named(text) }
+    val identifier by optional(STRICT) * VARIABLE use { Id.named(t2.text, t1 != null) }
     val decimalLiteral by DECIMAL use { DecimalLiteral(text.toDouble()) }
     val integerLiteral by INTEGER use { IntegerLiteral(text.toInt()) }
     val stringLiteral by STRING_LITERAL use {
-        StringLiteral(text.removeSurrounding("\"", "\"").replace(Regex("\\\\(.)")) { it.groupValues[1] })
+        StringLiteral(text.removeSurrounding("\"", "\"")
+            .replace(Regex("\\\\n")) { "\n"}
+            .replace(Regex("\\\\(.)")) { it.groupValues[1] })
     }
 
     val arrayShortHandExpr by -LSBRACK * separatedTerms(parser(this::expression), COMMA, acceptZero = true) * -RSBRACK use {
@@ -86,8 +89,8 @@ val alderLangGrammar = object : Grammar<Node>() {
         Assign(t1, createFunction(t2, t3))
     }
 
-    val assignExpr by assign * -K_IN * parser(this::expression) use {
-        Apply(Function(t1.lhs, t2), t1.rhs)
+    val assignExpr by -K_LET * pattern * zeroOrMore(pattern) * -EQUALS * parser(this::expression) * -K_IN * parser(this::expression) use {
+        Apply(Function(t1, t4), createFunction(t2, t3))
     }
 
     val function by pattern * -ARROW * parser(this::expression) use { Function(t1, t2) }
@@ -99,7 +102,7 @@ val alderLangGrammar = object : Grammar<Node>() {
     val typeName by typeId * zeroOrMore(identifier) use { TypeName(t1, t2) }
     val typeArg: Parser<TypePattern> by identifier or -LPAREN * typeName * -RPAREN
     val constructor by typeId * zeroOrMore(typeArg) use {
-        val args = t2.map { Id.unique() }
+        val args = t2.map { Id.unique(false) }
         val instance: Expression = TypedValue(t1, args)
         DataConstructor(t1, args.foldRight(instance) { arg, acc -> Function(arg, acc) })
     }

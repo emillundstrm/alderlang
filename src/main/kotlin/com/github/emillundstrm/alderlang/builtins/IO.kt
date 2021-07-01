@@ -2,15 +2,17 @@ package com.github.emillundstrm.alderlang.builtins
 
 import com.github.emillundstrm.alderlang.ast.*
 
-val printLine = NativeFunction { _, arg ->
+val readLn = IOAction { StringLiteral(readLine()!!) }
+
+val print = NativeFunction { _, arg ->
     IOAction { eval ->
         val str = eval(arg) as StringLiteral
-        println(str.value)
+        print(str.value)
         TypedValue("Unit")
     }
 }
 
-//:: IO a -> (f a -> IO b) -> IO b
+//:: IO a -> (a -> IO b) -> IO b
 val chainIO = NativeFunction { _, first ->
     NativeFunction { _, next ->
         IOAction { eval ->

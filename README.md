@@ -13,12 +13,17 @@
 
 # Alder Programming Language
 
-“There are two ways of constructing a software design: One way is to make it so simple that there are obviously no deficiencies, and the other way is to make it so complicated that there are no obvious deficiencies. The first method is far more difficult.”
+"There are two ways of constructing a software design: One way is to make it so simple that there are obviously no deficiencies, and the other way is to make it so complicated that there are no obvious deficiencies. The first method is far more difficult."
 
 ― C. A. R. Hoare
 
+"Any sufficiently complicated C or Fortran program contains an ad hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp."
+
+― Philip Greenspun
+
 :warning: This is a personal project, for my own learning and enjoyment. If you are interested in how to parse and interpret a programming language, then
- stay around and take a look. If you are looking for something _useful_, you are in the wrong place.
+ stay around and take a look - but be aware that the implementation is very inefficient (and possibly wrong). If you are looking for something
+ _useful_, you are in the wrong place.
 
 ## About The Project
 
@@ -36,8 +41,8 @@ I use .al as the file extension for its source code files, which has a double me
 
 ## The Language
 
-The syntax is strongly inspired by Haskell, but there are some deviations. For example, the grammar is completely context-free as there are no indentation
- rules. Instead, keywords have been introduced for some constructs that would otherwise be ambiguous.
+The syntax is strongly inspired by Haskell with some deviations. The grammar is completely context-free as there are no indentation
+ rules. Alder requires slightly more keywords than Haskell to resolve syntax that would otherwise be ambiguous. 
 
 ### Basic syntax
 
@@ -63,35 +68,6 @@ addOne x
 add x y
 add (f x) (y - 1)
 (x -> y -> x) "foo" "bar"
-```
-
-### More on function application
-
-Function application is left-associative and has very high precedence. This makes sense for people familiar with Haskell, but for those who are used to other
- programming languages it can be confusing how parentheses must be used. Consider this example:
- 
-```
-# Given:
-# toString :: Int -> String
-# length :: String -> Int
-# myString :: String
-
-# Incorrect - tries to call println with four arguments
-let main = println toString length myString
-
-# Correct - parentheses used to indicate application order
-let main = println (toString (length myString)) 
-```
-
-This can cause an unwieldy amount of parentheses, which can complicate reading. For this reason, Alder has a special operator for function application that
- has very _low_ precedence (shamelessly borrowed from F#, and similar to $ in Haskell)
- 
-```
-# Correct - uses left pipe operator (TODO: should this be right associative?)
-let main = println <| toString (length myString) 
-
-# Correct - uses right pipe operator
-let main = myString |> length |> toString |> println
 ```
 
 ### Types
@@ -143,6 +119,68 @@ let map f list = case list of
 
 Here the `list` argument will be matched against two different pattern-matching functions and use the first one which matches.
 
+### Currying
+
+All functions in Alder take exactly one argument. Functions that use multiple arguments have to be curried. For example:
+
+```
+let add = x -> (y -> x + y)
+```
+
+Add takes the argument `x` and produces a new function that takes the argument `y`. On invoking in this new function, the arguments are finally added and
+ returned.
+ 
+Since the function arrow is left-associative, the the parentheses can be omitted:
+
+```
+let add = x -> y -> x + y 
+```
+
+Functions expressed in `let` expressions are also curried behind the scenes.  
+
+
+### More on function application
+
+Function application is left-associative and has very high precedence. This makes sense for people familiar with Haskell, but for those who are used to other
+ programming languages it can be confusing how parentheses must be used. Consider this example:
+ 
+```
+# Given:
+# toString :: Int -> String
+# length :: String -> Int
+# myString :: String
+
+# Incorrect - tries to call println with four arguments
+let main = println toString length myString
+
+# Correct - parentheses used to indicate application order
+let main = println (toString (length myString)) 
+```
+
+This can cause an unwieldy amount of parentheses, which can complicate reading. For this reason, Alder has a special operator for function application that
+ has very _low_ precedence (shamelessly borrowed from F#, and similar to $ in Haskell)
+ 
+```
+# Correct - uses left pipe operator (TODO: should this be right associative?)
+let main = println <| toString (length myString) 
+
+# Correct - uses right pipe operator
+let main = myString |> length |> toString |> println
+```
+
+### Modules
+
+Modules are extremely basic right now. You import a module using the `import` keyword at the top of your file:
+
+```
+import stdlib
+```
+
+This puts everything from stdlib into your local scope. 
+
+:warning: There is no protection against name clashes, and there is just one lexical scope for globally defined functions. In other words you can 
+"override" functions with catastrophic results. 
+
 ### IO
 
 IO is in alpha state.
@@ -153,9 +191,25 @@ The idea right now is to make it work like Haskell, with an IO type.
 
 Lazy evaluation is not always optimal. Sometimes, it can make sense to force the early evaluation of an expression.
 
-The `seq` function (or `!!` operator) can be used for this.
+The mechanic for this is to annotate the function arguments with a `!`
 
-TODO: Example for when this is useful.
+```
+# Non-strict example 
+(x -> x + x) (sum [1,2,3])
+=> (sum [1,2,3]) + (sum [1,2,3])
+=> 6 + sum [1,2,3]
+=> 6 + 6
+=> 12
+
+# Strict version
+(!x -> x + x) (sum [1,2,3])
+=> (!x -> x + x) 6
+=> 6 + 6
+=> 12
+```
+
+This is simple example, and in this case it would probably not make a difference since the result of `sum [1,2,3]` is cached, but in some cases it can avoid
+ keeping unnecessary structures in memory.
 
 ## Examples
 
@@ -176,9 +230,11 @@ Unordered:
 - Type checking
 - Type classes (or an alternative)
 - More native functions for manipulation of primitive values
-- Tail recursion
+- Better modules
+- Tail call elimination
 - Macros (functions of type Expression -> Any)
 - Type-safe records
+- Compiler (probably to Javascript)
 
 ## License
 

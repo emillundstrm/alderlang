@@ -9,7 +9,7 @@ internal class MinilangParserTest {
     @Test
     fun testParseApply() {
         val ast = AlderParser.parseExpr("head list")
-        assertEquals(Apply(Identifier("head"), Identifier("list")), ast)
+        assertEquals(Apply(Id.named("head"), Id.named("list")), ast)
     }
 
     @Test
@@ -17,8 +17,8 @@ internal class MinilangParserTest {
         val ast = AlderParser.parseExpr("get 0 list")
         assertEquals(
             Apply(
-                Apply(Identifier("get"), IntegerLiteral(0)),
-                Identifier("list")
+                Apply(Id.named("get"), IntegerLiteral(0)),
+                Id.named("list")
             ), ast)
     }
 
@@ -27,9 +27,9 @@ internal class MinilangParserTest {
         val ast = AlderParser.parseExpr("head (list 1 2)")
         assertEquals(
             Apply(
-                Identifier("head"),
+                Id.named("head"),
                 Apply(
-                    Apply(Identifier("list"), IntegerLiteral(1)),
+                    Apply(Id.named("list"), IntegerLiteral(1)),
                     IntegerLiteral(2)
                 )
             ), ast)
@@ -47,8 +47,8 @@ internal class MinilangParserTest {
     fun testParseLambdaFunction() {
         assertEquals(
             Function(
-                Identifier("a"),
-                Function(Identifier("b"), Apply(Identifier("a"), Identifier("b")))
+                Id.named("a"),
+                Function(Id.named("b"), Apply(Id.named("a"), Id.named("b")))
             ),
             AlderParser.parseExpr("a -> b -> a b")
         )
@@ -71,10 +71,10 @@ internal class MinilangParserTest {
         )
 
         assertEquals(program.letRec.types[0],
-            TypeDef(TypeName(Identifier("Bool")),
+            TypeDef(TypeName(Id.named("Bool")),
                 listOf(
-                    DataConstructor(Identifier("True"), TypedValue("True")),
-                    DataConstructor(Identifier("False"), TypedValue("False"))
+                    DataConstructor(Id.named("True"), TypedValue("True")),
+                    DataConstructor(Id.named("False"), TypedValue("False"))
                 )))
     }
 

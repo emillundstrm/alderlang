@@ -17,12 +17,6 @@ let compose f g x = f (g x)
 
 let flip f x y = f y x
 
-let range from to =
-    let gen b = if (eq b to) None (Just (Pair b (plus b 1))) in
-    unfoldr gen from
-
-let iterate f = unfoldr (x -> Just (Pair x (f x)))
-
 let if cond ifTrue ifFalse =
     case cond of
         | True  -> ifTrue
@@ -31,3 +25,7 @@ let if cond ifTrue ifFalse =
 let and b1 b2 = if b1 b2 False
 
 let or b1 b1 = if b1 True b2
+
+let not b = case b of True -> False | False -> True
+
+let complement f x = not (f x)
