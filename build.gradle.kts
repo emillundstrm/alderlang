@@ -13,6 +13,7 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation("com.github.h0tk3y.betterParse:better-parse:0.4.2")
+    implementation("org.pcollections:pcollections:2.1.2")
 
     testImplementation(kotlin("test"))
 }
